@@ -1,0 +1,38 @@
+#!/bin/bash
+
+
+MONGODB_URI=$MONGODB
+
+COLLECTION="test"
+
+# Count variables
+total_records_imported=0
+total_records_failed=0
+total_files_imported=0
+total_files_failed=0
+
+for file in data/*; do
+    if [[ $file == *.json ]]; then
+        record_count=$(jq length "$file")
+        mongoimport --uri "$MONGODB_URI" --collection "$COLLECTION" "$file" --jsonArray
+
+        status=$?        
+        if [ $status -eq 0 ]; then
+            echo "Successfully imported $file with $record_count records."
+            total_files_imported=$((total_files_imported + 1))
+            total_records_imported=$((total_records_imported + record_count))
+        else
+            echo "Failed to import $file with $record_count records."
+            total_files_failed=$((total_files_failed + 1))
+            total_records_failed=$((total_records_failed + record_count))
+        fi
+    fi
+done
+
+echo "Total Files Imported: $total_files_imported" > count.txt
+echo "Total Files Failed to Import: $total_files_failed" >> count.txt
+echo "Total Records Imported: $total_records_imported" >> count.txt
+echo "Total Records Failed to Import: $total_records_failed" >> count.txt
+
+cat count.txt
+
